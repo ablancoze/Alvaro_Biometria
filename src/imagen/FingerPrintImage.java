@@ -44,7 +44,7 @@ public class FingerPrintImage {
 		
 		MatrizZangShuen = new  int [360][480];
 		
-		Umbral = 100;
+		Umbral = 60;
 		
 		
 	}
@@ -282,21 +282,18 @@ public class FingerPrintImage {
 	 */
 	public BufferedImage zangSuen(){
 		BufferedImage img = null;
-		int [][] imgaux = MatrizByNSinRuido;
-		
-        int width = imgaux.length;
-        int height = imgaux[0].length;
+        int width = MatrizByNSinRuido.length;
+        int height = MatrizByNSinRuido[0].length;
         
-        int connectivity = 0, numBlanco = 0;
+        int numBlanco = 0;
         int p2 = 0, p3 = 0, p4 = 0, p5 = 0, p6 = 0, p7 = 0, p8 = 0, p9 = 0, p1 = 0;
-        int resultado = 0;
         boolean cambio = false;
         
         List<Point> pointsToChange = new LinkedList();
 
         for (int cont = 0; cont < width; cont++) {
             for (int cont1 = 0; cont1 < height; cont1++) {
-            	MatrizZangShuen[cont][cont1] = imgaux[cont][cont1];
+            	MatrizZangShuen[cont][cont1] = MatrizByNSinRuido[cont][cont1];
             }
         }
 
@@ -304,6 +301,7 @@ public class FingerPrintImage {
             cambio = false;
             for (int i = 1; i < width - 1; i++) {
                 for (int j = 1; j < height - 1; j++) {
+                	
                 	//Ventana de vencidad.
                     p1 = MatrizZangShuen[i][j];
                     p9 = MatrizZangShuen[i - 1][j - 1];
@@ -323,9 +321,9 @@ public class FingerPrintImage {
                         	//Condicion 2: Que total en cambios 1 0 entre los pixeles p2,p3,p4,... sea 1 
                         	if (numCambios(p2,p3,p4,p5,p6,p7,p8,p9)==1) {
                         		//Condicion 3: p2 * p3 * p6 == 1
-                        		if(p2*p4*p6 == 1) {
+                        		if(p2*p4*p6 == 0) {
                         			//Condicion 4: p4 * p6 * p8 == 1
-                        			if(p4*p6*p8 == 1) {
+                        			if(p4*p6*p8 == 0) {
                         				 cambio = true;
                                          pointsToChange.add(new Point(i, j));
                         			}
@@ -343,8 +341,9 @@ public class FingerPrintImage {
 
             for (int k = 1; k < width - 1; k++) {
                 for (int l = 1; l < height - 1; l++) {
+                	
+                	//Ventana de vecindad
                     p1 = MatrizZangShuen[k][l];
-
                     p9 = MatrizZangShuen[k - 1][l - 1];
                     p2 = MatrizZangShuen[k - 1][l];
                     p3 = MatrizZangShuen[k - 1][l + 1];
@@ -353,41 +352,24 @@ public class FingerPrintImage {
                     p7 = MatrizZangShuen[k + 1][l - 1];
                     p5 = MatrizZangShuen[k + 1][l + 1];
                     p6 = MatrizZangShuen[k + 1][l];
-
+                    
                     if (p1 == 1) {
+                    	//Sumamos los piexeles vecinos para ver su valor total
                         numBlanco = p2 + p3 + p4 + p5 + p6 + p7 + p8 + p9;
-
-                        if (p2 == 0 && p3 == 1) {
-                            connectivity++;
+                        //Condicion 1: Que el numero de pixeles negro este entre 2 y 6
+                        if (numBlanco >= 2 && numBlanco <=6) {
+                        	//Condicion 2: Que total en cambios 1 0 entre los pixeles p2,p3,p4,... sea 1 
+                        	if (numCambios(p2,p3,p4,p5,p6,p7,p8,p9)==1) {
+                        		//Condicion 3: p2 * p3 * p6 == 1
+                        		if(p2*p4*p8 == 0) {
+                        			//Condicion 4: p4 * p6 * p8 == 1
+                        			if(p2*p6*p8 == 0) {
+                        				 cambio = true;
+                                         pointsToChange.add(new Point(k, l));
+                        			}
+                        		}
+                        	}
                         }
-                        if (p3 == 0 && p4 == 1) {
-                            connectivity++;
-                        }
-                        if (p4 == 0 && p5 == 1) {
-                            connectivity++;
-                        }
-                        if (p5 == 0 && p6 == 1) {
-                            connectivity++;
-                        }
-                        if (p6 == 0 && p7 == 1) {
-                            connectivity++;
-                        }
-                        if (p7 == 0 && p8 == 1) {
-                            connectivity++;
-                        }
-                        if (p8 == 0 && p9 == 1) {
-                            connectivity++;
-                        }
-                        if (p9 == 0 && p2 == 1) {
-                            connectivity++;
-                        }
-
-                        if (connectivity == 1 && (numBlanco >= 2 && numBlanco <= 6)
-                                && (p8 * p2 * p4 == 0) && (p2 * p6 * p8 == 0)) {
-                            cambio = true;
-                            pointsToChange.add(new Point(k, l));
-                        }
-                        connectivity = 0;
                     }
                 }
             }
@@ -399,12 +381,11 @@ public class FingerPrintImage {
 
         } while (cambio);
 
-        //Volvemos a invertir la imagen
         for (int i = 0; i < width; i++) {
             for (int j = 0; j < height; j++) {
                 if (MatrizZangShuen[i][j] == 0) {
                 	MatrizZangShuen[i][j] = 1;
-                } else {
+                }else{
                 	MatrizZangShuen[i][j] = 0;
                 }
             }
@@ -415,6 +396,63 @@ public class FingerPrintImage {
         return img;
 	}
 	
+	/**
+	 * 
+	 * @return
+	 */
+	public List<Integer> deteccionMinutias(){
+		List<Integer> listaMinutias = new LinkedList<Integer>();
+		int width = MatrizZangShuen.length;
+        int height = MatrizZangShuen[0].length;
+        int[] neigh = new int[9];
+        int p = 0;
+        int resultado = 0;
+        int a = 0;
+        for (int k = 16; k < width - 16; k++) {
+            for (int l = 16; l < height - 16; l++) {
+                p = MatrizZangShuen[k][l];
+                if (p == 0) {
+                	neigh[7] = MatrizZangShuen[k - 1][l - 1];
+                	neigh[0] = MatrizZangShuen[k - 1][l];
+                	neigh[1] = MatrizZangShuen[k - 1][l + 1];
+                	neigh[6] = MatrizZangShuen[k][l - 1];
+                	neigh[2] = MatrizZangShuen[k][l + 1];
+                	neigh[5] = MatrizZangShuen[k + 1][l - 1];
+                	neigh[3] = MatrizZangShuen[k + 1][l + 1];
+                	neigh[4] = MatrizZangShuen[k + 1][l];
+                	neigh[8] = MatrizZangShuen[k - 1][l];
+                    for (int i = 0; i < neigh.length - 1; i++) {
+
+                        a = Math.abs(neigh[i] - neigh[i + 1]);
+                        resultado = resultado + a;
+                    }
+                    resultado = resultado / 2;
+                    if (resultado == 1 || resultado == 3) {
+                    	listaMinutias.add(k);
+                    	listaMinutias.add(l);
+                    	listaMinutias.add(resultado);
+                    	listaMinutias.add(0); //angulo 
+                    }
+                    resultado = 0;
+                }
+
+            }
+        }
+		return listaMinutias;
+	}
+	
+	/**
+	 * 
+	 * @param p2
+	 * @param p3
+	 * @param p4
+	 * @param p5
+	 * @param p6
+	 * @param p7
+	 * @param p8
+	 * @param p9
+	 * @return
+	 */
 	private int numCambios(int p2,int p3, int p4, int p5, int p6, int p7, int p8, int p9) {
 		int total = 0;
 		if (p2 == 0 && p3 == 1)

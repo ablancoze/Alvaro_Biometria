@@ -9,19 +9,39 @@ import javax.swing.JMenuBar;
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
 import javax.swing.JButton;
-
+import javax.swing.JFileChooser;
 
 import imagen.FingerPrintImage;
 
 import java.awt.event.ActionListener;
 import java.awt.image.BufferedImage;
+import java.io.File;
 import java.io.IOException;
 import java.awt.event.ActionEvent;
 import javax.swing.JSlider;
+import javax.swing.UIManager;
+import java.awt.Color;
+import javax.swing.event.ChangeListener;
+import javax.swing.event.ChangeEvent;
+import javax.swing.JTextArea;
+import java.awt.Font;
 
 
 public class Interfaz {
-
+	
+	public BufferedImage imgGris = null;
+	
+	public BufferedImage imgHistograma = null;
+	
+	public BufferedImage imgBlancoNegro = null;
+	
+	public BufferedImage imgByNSinRuido = null;
+	
+	public BufferedImage imgZhanSuen = null;
+	
+	public int umbral = 80;
+	
+	
 	private JFrame frame;
 
 	/**
@@ -31,6 +51,7 @@ public class Interfaz {
 		EventQueue.invokeLater(new Runnable() {
 			public void run() {
 				try {
+					UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
 					Interfaz window = new Interfaz();
 					window.frame.setVisible(true);
 				} catch (Exception e) {
@@ -47,7 +68,6 @@ public class Interfaz {
 		try {
 			initialize();
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	}
@@ -58,7 +78,7 @@ public class Interfaz {
 	 */
 	private void initialize() throws IOException {
 		frame = new JFrame();
-		frame.setBounds(100, 100, 1280, 720);
+		frame.setBounds(100, 100, 1300, 720);
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		frame.getContentPane().setLayout(null);
 		
@@ -66,7 +86,7 @@ public class Interfaz {
 		
 		
 		JMenuBar menuBarMain = new JMenuBar();
-		menuBarMain.setBounds(0, 0, 1264, 21);
+		menuBarMain.setBounds(0, 0, 1284, 21);
 		frame.getContentPane().add(menuBarMain);
 		
 		JMenu mnArchivos = new JMenu("Archivos");
@@ -97,42 +117,76 @@ public class Interfaz {
 		
 		JButton btnZangSuen = new JButton("Zhang-Suen");
 		
-		btnEliminarRuido.setBounds(651, 630, 117, 25);
+		btnEliminarRuido.setBounds(559, 630, 160, 25);
 		frame.getContentPane().add(btnEliminarRuido);
 		
 		btnConvertirAGris.setBounds(12, 630, 176, 25);
 		frame.getContentPane().add(btnConvertirAGris);
 		
 		
-		btnHacerHistograma.setBounds(200, 630, 176, 25);
+		btnHacerHistograma.setBounds(200, 630, 151, 25);
 		frame.getContentPane().add(btnHacerHistograma);
 		
 		
-		btnBlancoNegro.setBounds(388, 630, 251, 25);
+		btnBlancoNegro.setBounds(361, 630, 188, 25);
 		frame.getContentPane().add(btnBlancoNegro);
 		
-		btnZangSuen.setBounds(780, 630, 117, 25);
+		btnZangSuen.setBounds(729, 630, 117, 25);
 		frame.getContentPane().add(btnZangSuen);
 		
 		JSlider slider = new JSlider();
-		slider.setBounds(532, 425, 200, 16);
+		slider.setPaintLabels(true);
+		slider.setPaintTicks(true);
+		slider.setMajorTickSpacing(5);
+		slider.setValue(80);
+		slider.setMaximum(127);
+		slider.setBounds(380, 48, 524, 45);
 		frame.getContentPane().add(slider);
+		
+		JLabel text = new JLabel("Umbral = 80 ");
+		text.setFont(new Font("Tahoma", Font.PLAIN, 15));
+		text.setBackground(Color.WHITE);
+		text.setBounds(592, 104, 97, 21);
+		frame.getContentPane().add(text);
+		
+		JTextArea textArea = new JTextArea();
+		textArea.setBounds(460, 156, 360, 356);
+		frame.getContentPane().add(textArea);
 		
 
 
-		FingerPrintImage p = new FingerPrintImage();		
+		FingerPrintImage p = new FingerPrintImage();	
+		
+		slider.addChangeListener(new ChangeListener() {
+			public void stateChanged(ChangeEvent e) {
+				text.setText("Umbral = " +slider.getValue());
+				umbral = slider.getValue();
+				if (imgBlancoNegro != null) {
+					imgBlancoNegro = p.convertiBlancoNegro(umbral);
+					int i = 0;
+					while (i < 2) {
+						img2.setIcon(new ImageIcon(imgBlancoNegro));
+						img2.setBounds(914, 32, 360, 480);
+						frame.getContentPane().add(img2);
+						i++;
+					}
+				}
+			}
+		});
 		
 		mntmCargarArchivos.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-
+				JFileChooser fileChooser = new JFileChooser();
+				fileChooser.showOpenDialog(null);
+				File archivo = fileChooser.getSelectedFile();
+				String ruta=archivo.getAbsolutePath();
 				int i = 0;
 				while(i<2) {
 					try {
-						img1.setIcon(new ImageIcon(p.cargarImagen(System.getProperty("user.dir")+"/Imagenes/101_2.jpg")));
-						img1.setBounds(10, 54, 360, 480);
+						img1.setIcon(new ImageIcon(p.cargarImagen(ruta)));
+						img1.setBounds(10, 32, 360, 480);
 						frame.getContentPane().add(img1);
 					} catch (IOException e1) {
-						// TODO Auto-generated catch block
 						e1.printStackTrace();
 					}
 					i++;
@@ -143,12 +197,11 @@ public class Interfaz {
 		
 		btnConvertirAGris.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				BufferedImage imgGris;
 				imgGris=p.convertirAgris(1);
 				int i = 0;
 				while (i < 2) {
 					img2.setIcon(new ImageIcon(imgGris));
-					img2.setBounds(904, 54, 360, 480);
+					img2.setBounds(914, 32, 360, 480);
 					frame.getContentPane().add(img2);
 					i++;
 				}
@@ -158,13 +211,15 @@ public class Interfaz {
 		
 		btnHacerHistograma.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				BufferedImage imgHistograma;
 				imgHistograma=p.histogramaEnEscalaGris(1);
 				int i = 0;
 				while (i < 2) {
 					img2.setIcon(new ImageIcon(imgHistograma));
-					img2.setBounds(904, 54, 360, 480);
+					img2.setBounds(914, 32, 360, 480);
 					frame.getContentPane().add(img2);
+					img1.setIcon(new ImageIcon(imgGris));
+					img1.setBounds(10, 32, 360, 480);
+					frame.getContentPane().add(img1);
 					i++;
 				}
 			}
@@ -173,13 +228,15 @@ public class Interfaz {
 		
 		btnBlancoNegro.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				BufferedImage imgBlancoNegro;
-				imgBlancoNegro=p.convertiBlancoNegro(68);
+				imgBlancoNegro=p.convertiBlancoNegro(umbral);
 				int i = 0;
 				while (i < 2) {
 					img2.setIcon(new ImageIcon(imgBlancoNegro));
-					img2.setBounds(904, 54, 360, 480);
+					img2.setBounds(914, 32, 360, 480);
 					frame.getContentPane().add(img2);
+					img1.setIcon(new ImageIcon(imgHistograma));
+					img1.setBounds(10, 32, 360, 480);
+					frame.getContentPane().add(img1);
 					i++;
 				}
 			}
@@ -189,13 +246,15 @@ public class Interfaz {
 		
 		btnEliminarRuido.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				BufferedImage imgByNSinRuido;
 				imgByNSinRuido = p.eliminarRuidoBinario();
 				int i = 0;
 				while(i<2) {
 					img2.setIcon(new ImageIcon(imgByNSinRuido));
-					img2.setBounds(904, 54, 360, 480);
+					img2.setBounds(914, 32, 360, 480);
 					frame.getContentPane().add(img2);
+					img1.setIcon(new ImageIcon(imgBlancoNegro));
+					img1.setBounds(10, 32, 360, 480);
+					frame.getContentPane().add(img1);
 					i++;
 				}
 			}
@@ -203,20 +262,19 @@ public class Interfaz {
 		
 		btnZangSuen.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				BufferedImage imgZhanSuen;
 				imgZhanSuen = p.zangSuen();
 				int i = 0;
 				while(i<2) {
 					img2.setIcon(new ImageIcon(imgZhanSuen));
-					img2.setBounds(904, 54, 360, 480);
+					img2.setBounds(914, 32, 360, 480);
 					frame.getContentPane().add(img2);
+					img1.setIcon(new ImageIcon(imgByNSinRuido));
+					img1.setBounds(10, 32, 360, 480);
+					frame.getContentPane().add(img1);
 					i++;
 				}
 				
 			}
 		});
-		
-		
-		
 	}
 }
