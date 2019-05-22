@@ -21,7 +21,10 @@ public class FingerPrintImage {
 	public int [][] MatrizByNSinRuido;
 	
 	public int [][] MatrizZangShuen;
+	
+	public List<Integer> listaMinutias;
 
+	public List<Integer> recorrido;
 	
 	public int Umbral;
 	
@@ -43,6 +46,10 @@ public class FingerPrintImage {
 		MatrizByNSinRuido = new int [360][480];
 		
 		MatrizZangShuen = new  int [360][480];
+		
+		listaMinutias = new LinkedList<Integer>() ;
+		
+		recorrido = new LinkedList<Integer>() ;
 		
 		Umbral = 60;
 		
@@ -400,8 +407,115 @@ public class FingerPrintImage {
 	 * 
 	 * @return
 	 */
-	public List<Integer> deteccionMinutias(){
-		List<Integer> listaMinutias = new LinkedList<Integer>();
+	public BufferedImage deteccionMinutias(){
+		BufferedImage img = convertirRGB(0, MatrizZangShuen);
+		listaMinutias.clear();
+		deteccion();
+		
+		int blue = (255 << 24 | 0 | 0 | 255);
+		int purple = (255 << 24 | 255 << 16| 0 | 255);
+		int red = (255 << 24 | 255 << 16| 0 | 0);
+		
+		for (int i=0; i<listaMinutias.size(); i = i+4) {
+			int x = listaMinutias.get(i);
+			int y = listaMinutias.get(i+1);
+			
+			if (listaMinutias.get(i+2)==1) {
+				img.setRGB(x, y, purple);
+				img.setRGB(x, y+1, blue);
+				img.setRGB(x-1, y+1, blue);
+				img.setRGB(x-1, y, blue);
+				img.setRGB(x-1, y-1, blue);
+				img.setRGB(x, y-1, blue);
+				img.setRGB(x+1, y-1, blue);
+				img.setRGB(x+1, y, blue);
+				img.setRGB(x+1, y+1, blue);
+			}else {
+				img.setRGB(x, y, blue);
+				img.setRGB(x, y+1, purple);
+				img.setRGB(x-1, y+1, purple);
+				img.setRGB(x-1, y, purple);
+				img.setRGB(x-1, y-1, purple);
+				img.setRGB(x, y-1, purple);
+				img.setRGB(x+1, y-1, purple);
+				img.setRGB(x+1, y, purple);
+				img.setRGB(x+1, y+1, purple);
+			}
+		}
+		return img;
+	}
+	
+	
+	public void anguloMinutia() {
+		double resultado = 0;
+		for (int i = 0; i < listaMinutias.size(); i += 4) {
+			
+			if (listaMinutias.get(i+2) == 1) { // si el tipo de la minutia es de terminacion
+				
+				resultado = gradientesMinutia(listaMinutias.get(i),listaMinutias.get(i+1));
+				listaMinutias.remove(i+3);
+				listaMinutias.add(i+3, (int) resultado);
+			}
+			
+		}
+	}
+	
+	private double gradientesMinutia(int x, int y) {
+		float gradienteX;
+		float gradienteY;
+		double resultado = 0;
+		boolean flag = false;
+		
+		//añado el origen de la minutia al la lista de visitados puesto que es el origen 
+		recorrido.add(x);
+		recorrido.add(y);
+
+		for (int i = 0; i < 5; i++) {
+			flag = false;
+			//Comienzo siempre en el piexel anterior a el. Esto quiere dececir que comienzo explorando teniendo en cuenta que mi origen de minutia es el centro de una ventana de
+			//3x3......
+			//Esto lo hacemos porque no sabemos a que direccion va la minutua y tenemos que encontrar su siguente vecino.
+			//Este proceso lo hacemos 6 veces. Es decir vamos a encontrar 6 vecinos y luego realizamos las operaciones
+			x = x-1;
+			y = y-1;
+			for (int j = 0; j < 3 && flag == false; j++) {
+				for (int k = 0; k < 3 && flag == false; k++) {
+					if (MatrizZangShuen[x + j][y + k] == 1 && !visitado(x + j , y + k)){
+						
+						flag = true;
+						x = x + j;
+                        y = y + k;
+                        recorrido.add(x);
+                        recorrido.add(y);
+					}
+				}
+			}
+		}
+		
+		 gradienteX = recorrido.get(recorrido.size()-2) - recorrido.get(0); // X.final -- X.inicial
+		 gradienteY = recorrido.get(recorrido.size()-1) - recorrido.get(1); // Y.final -- Y.inicial
+		
+		if (gradienteX != 0) { // Comprobamos que el gradiente de X no sea 0 .... Las divisiones entre 0 no esta permitidas
+			resultado = gradienteY/gradienteX; // Hacemos la division de ambos gradientes
+			resultado = (Math.atan(resultado)); // Hacemos la arcTg
+			resultado = Math.toDegrees(resultado); // Pasamos el resultado a grados.
+		}else {
+			if (gradienteY != 0 && gradienteX == 0) {
+				resultado = 90;
+			}
+		}
+		
+		recorrido.clear();
+		
+		return resultado;
+	}
+
+	private boolean visitado(int i, int j) {
+		
+		return false;
+	}
+
+	private void deteccion(){
 		int width = MatrizZangShuen.length;
         int height = MatrizZangShuen[0].length;
         int[] neigh = new int[9];
@@ -412,15 +526,16 @@ public class FingerPrintImage {
             for (int l = 16; l < height - 16; l++) {
                 p = MatrizZangShuen[k][l];
                 if (p == 0) {
-                	neigh[7] = MatrizZangShuen[k - 1][l - 1];
-                	neigh[0] = MatrizZangShuen[k - 1][l];
+                	neigh[0] = MatrizZangShuen[k][l + 1];
                 	neigh[1] = MatrizZangShuen[k - 1][l + 1];
-                	neigh[6] = MatrizZangShuen[k][l - 1];
-                	neigh[2] = MatrizZangShuen[k][l + 1];
+                	neigh[2] = MatrizZangShuen[k - 1][l];
+                	neigh[3] = MatrizZangShuen[k - 1][l - 1];
+                	neigh[4] = MatrizZangShuen[k][l - 1];
                 	neigh[5] = MatrizZangShuen[k + 1][l - 1];
-                	neigh[3] = MatrizZangShuen[k + 1][l + 1];
-                	neigh[4] = MatrizZangShuen[k + 1][l];
-                	neigh[8] = MatrizZangShuen[k - 1][l];
+                	neigh[6] = MatrizZangShuen[k + 1][l];
+                	neigh[7] = MatrizZangShuen[k + 1][l + 1];
+                	neigh[8] = MatrizZangShuen[k][l + 1];
+
                     for (int i = 0; i < neigh.length - 1; i++) {
 
                         a = Math.abs(neigh[i] - neigh[i + 1]);
@@ -428,17 +543,16 @@ public class FingerPrintImage {
                     }
                     resultado = resultado / 2;
                     if (resultado == 1 || resultado == 3) {
-                    	listaMinutias.add(k);
-                    	listaMinutias.add(l);
-                    	listaMinutias.add(resultado);
-                    	listaMinutias.add(0); //angulo 
+                    	listaMinutias.add(k);//cordenada X
+                    	listaMinutias.add(l);//cordenada y
+                    	listaMinutias.add(resultado);//1 si es terminacion/corte, 3 si es corte
+                    	listaMinutias.add(0);
                     }
                     resultado = 0;
                 }
 
             }
         }
-		return listaMinutias;
 	}
 	
 	/**

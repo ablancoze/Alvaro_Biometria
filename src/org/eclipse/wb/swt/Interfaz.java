@@ -39,6 +39,8 @@ public class Interfaz {
 	
 	public BufferedImage imgZhanSuen = null;
 	
+	public BufferedImage imgZhanSuenDeteccion = null;
+	
 	public int umbral = 80;
 	
 	
@@ -117,6 +119,8 @@ public class Interfaz {
 		
 		JButton btnZangSuen = new JButton("Zhang-Suen");
 		
+		JButton btnDeteccion = new JButton("Identificar terminaciones y bifurcaciones");
+		
 		btnEliminarRuido.setBounds(559, 630, 160, 25);
 		frame.getContentPane().add(btnEliminarRuido);
 		
@@ -131,8 +135,14 @@ public class Interfaz {
 		btnBlancoNegro.setBounds(361, 630, 188, 25);
 		frame.getContentPane().add(btnBlancoNegro);
 		
+		
 		btnZangSuen.setBounds(729, 630, 117, 25);
 		frame.getContentPane().add(btnZangSuen);
+		
+		
+		btnDeteccion.setBounds(853, 631, 225, 23);
+		frame.getContentPane().add(btnDeteccion);
+		
 		
 		JSlider slider = new JSlider();
 		slider.setPaintLabels(true);
@@ -153,7 +163,6 @@ public class Interfaz {
 		textArea.setBounds(460, 156, 360, 356);
 		frame.getContentPane().add(textArea);
 		
-
 
 		FingerPrintImage p = new FingerPrintImage();	
 		
@@ -276,5 +285,24 @@ public class Interfaz {
 				
 			}
 		});
+		
+		btnDeteccion.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				imgZhanSuenDeteccion = p.deteccionMinutias();
+				int i = 0;
+				
+				while(i<2) {
+					img2.setIcon(new ImageIcon(imgZhanSuenDeteccion));
+					img2.setBounds(914, 32, 360, 480);
+					frame.getContentPane().add(img2);
+					img1.setIcon(new ImageIcon(imgZhanSuen));
+					img1.setBounds(10, 32, 360, 480);
+					frame.getContentPane().add(img1);
+					i++;
+				}
+			}
+		});
+		
+		
 	}
 }
